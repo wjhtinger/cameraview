@@ -42,6 +42,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.github.hiteshsondhi88.libffmpeg.ExecuteBinaryResponseHandler;
+import com.github.hiteshsondhi88.libffmpeg.FFmpeg;
+import com.github.hiteshsondhi88.libffmpeg.LoadBinaryResponseHandler;
+import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException;
+import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException;
 import com.google.android.cameraview.AspectRatio;
 import com.google.android.cameraview.CameraView;
 
@@ -49,7 +54,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 /**
@@ -90,18 +99,110 @@ public class MainActivity extends AppCompatActivity implements
 
     private Handler mBackgroundHandler;
 
+    Handler handler = new Handler();
+    private int picCount = 0;
+    private String dirString = null;
+    Timer timer;
+    FFmpeg ffmpeg;
+
     private View.OnClickListener mOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.take_picture:
                     if (mCameraView != null) {
-                        mCameraView.takePicture();
+                        //mCameraView.takePicture();
+                        taskStart();
                     }
                     break;
             }
         }
     };
+
+    private void taskStart(){
+        Date date = new Date(System.currentTimeMillis());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy_MMdd_HHmmss");
+        File sdCard = Environment.getExternalStorageDirectory();
+        dirString = sdCard.getAbsolutePath() + "/windsing/ws_camera";// + dateFormat.format(date);
+        File dir = new File(dirString);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        picCount = 0;
+
+        timer = new Timer();
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mCameraView.takePicture();
+                    }
+                });
+            }
+        } ;
+        timer.schedule(timerTask,1000,3000);
+    }
+
+    private void createVideo(){
+        Date date = new Date(System.currentTimeMillis());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy_MMdd_HHmmss");
+        File sdCard = Environment.getExternalStorageDirectory();
+        String dirString = sdCard.getAbsolutePath() + "/windsing/ws_camera";
+
+        try {
+            ffmpeg = FFmpeg.getInstance(getApplicationContext());
+            ffmpeg.loadBinary(new LoadBinaryResponseHandler() {
+                @Override
+                public void onFailure() {
+
+                }
+            });
+        } catch (FFmpegNotSupportedException e) {
+
+        }
+
+        String cmd = String.format("-f image2 -i %s/%%d.jpg -vcodec libx264 -r 3 %s/ws_camera.mp4 -y", dirString, dirString);
+        String[] command = cmd.split(" ");
+        execFFmpegBinary(command,cmd);
+    }
+
+    private void execFFmpegBinary(final String[] command, final String cmdString) {
+        Log.d(TAG, "execFFmpegBinary::");
+        try {
+            ffmpeg.execute(command, new ExecuteBinaryResponseHandler() {
+                @Override
+                public void onFailure(String s) {
+
+                }
+
+                @Override
+                public void onSuccess(String s) {
+
+                }
+
+                @Override
+                public void onProgress(String s) {
+                    Log.d(TAG, "progress : "+ s);
+                }
+
+                @Override
+                public void onStart() {
+                    Log.d(TAG, "Started command : ffmpeg " + cmdString);
+
+                }
+
+                @Override
+                public void onFinish() {
+                    Log.d(TAG, "Finished command : ffmpeg "+ cmdString);
+                }
+            });
+        } catch (FFmpegCommandAlreadyRunningException e) {
+            // do nothing for now
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +222,13 @@ public class MainActivity extends AppCompatActivity implements
         if (actionBar != null) {
             actionBar.setDisplayShowTitleEnabled(false);
         }
+
+        findViewById(R.id.create_video).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                createVideo();
+            }
+        });
     }
 
     @Override
@@ -147,6 +255,8 @@ public class MainActivity extends AppCompatActivity implements
     protected void onPause() {
         mCameraView.stop();
         super.onPause();
+
+        timer.cancel();
     }
 
     @Override
@@ -250,13 +360,15 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void onPictureTaken(CameraView cameraView, final byte[] data) {
             Log.d(TAG, "onPictureTaken " + data.length);
+            final String fileString = String.valueOf(picCount++) + ".jpg";
+
             Toast.makeText(cameraView.getContext(), R.string.picture_taken, Toast.LENGTH_SHORT)
                     .show();
             getBackgroundHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    File file = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                            "picture.jpg");
+                    File file = new File(dirString,
+                            fileString);
                     OutputStream os = null;
                     try {
                         os = new FileOutputStream(file);

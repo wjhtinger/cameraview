@@ -46,6 +46,16 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         app:srcCompat="@drawable/ic_camera"
-        app:useCompatPadding="true"/>
+        app:useCompatPadding="true" />
+
+    <Button
+        android:id="@+id/create_video"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:text="生成视频"
+        android:layout_marginBottom="20dp"
+        app:srcCompat="@drawable/ic_camera"/>
 
 </RelativeLayout>
