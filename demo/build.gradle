@@ -20,7 +20,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        applicationId 'com.google.android.cameraview.demo'
+        applicationId 'com.google.android.cameraview.ws_camera'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
