@@ -58,4 +58,14 @@
         android:layout_marginBottom="20dp"
         app:srcCompat="@drawable/ic_camera"/>
 
+    <Button
+        android:id="@+id/stop_take_video"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:text="停止录制"
+        android:layout_marginBottom="20dp"
+        app:srcCompat="@drawable/ic_camera"/>
+
 </RelativeLayout>

@@ -229,7 +229,13 @@ public class MainActivity extends AppCompatActivity implements
                 createVideo();
             }
         });
-    }
+
+        findViewById(R.id.stop_take_video).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                timer.cancel();
+            }
+        });    }
 
     @Override
     protected void onResume() {
@@ -256,7 +262,7 @@ public class MainActivity extends AppCompatActivity implements
         mCameraView.stop();
         super.onPause();
 
-        timer.cancel();
+        //timer.cancel();
     }
 
     @Override
